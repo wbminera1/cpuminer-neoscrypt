@@ -33,8 +33,10 @@
 #include <string.h>
 
 #include "neoscrypt.h"
-
-
+#if (AVX)
+#include "salsa_20_sidm.c"
+#include "chacha_20_sidm.c"
+#endif
 #if (SHA256)
 
 /* SHA-256 */
@@ -1269,7 +1271,7 @@ void neoscrypt(const uchar *password, uchar *output, uint profile) {
         r = (1 << ((profile >> 5) & 0x7));
     }
 
-    uchar stack[(N + 3) * r * 2 * SCRYPT_BLOCK_SIZE + stack_align];
+    uchar stack[(N + 3) * r * 2 * SCRYPT_BLOCK_SIZE + stack_align] __attribute__((aligned(128)));
     /* X = r * 2 * SCRYPT_BLOCK_SIZE */
     X = (uint *) (((size_t)stack & ~(stack_align - 1)) + stack_align);
     /* Z is a copy of X for ChaCha */
@@ -1314,6 +1316,10 @@ void neoscrypt(const uchar *password, uchar *output, uint profile) {
 
     if(dblmix) {
         /* blkcpy(Z, X) */
+#if (AVX)
+    	neoscrypt_blkcpy(&Z[0], &X[0], r * 2 * SCRYPT_BLOCK_SIZE);
+        chacha_core_r2_sidm(Z, N, (mixmode & 0xFF)/2);
+#else
         neoscrypt_blkcpy(&Z[0], &X[0], r * 2 * SCRYPT_BLOCK_SIZE);
 
         /* Z = SMix(Z) */
@@ -1332,8 +1338,11 @@ void neoscrypt(const uchar *password, uchar *output, uint profile) {
             /* blkmix(Z, Y) */
             neoscrypt_blkmix(&Z[0], &Y[0], r, (mixmode | 0x0100));
         }
+#endif
     }
-
+#if (AVX)
+    scrypt_core_r2_sidm(X, N, (mixmode & 0xFF) /2);
+#else
     /* X = SMix(X) */
     for(i = 0; i < N; i++) {
         /* blkcpy(V, X) */
@@ -1349,7 +1358,7 @@ void neoscrypt(const uchar *password, uchar *output, uint profile) {
         /* blkmix(X, Y) */
         neoscrypt_blkmix(&X[0], &Y[0], r, mixmode);
     }
-
+#endif
     if(dblmix)
       /* blkxor(X, Z) */
       neoscrypt_blkxor(&X[0], &Z[0], r * 2 * SCRYPT_BLOCK_SIZE);
@@ -1593,7 +1602,6 @@ void neoscrypt_4way(const uchar *password, uchar *output, uint profile) {
             neoscrypt_xor_salsa_4way(&X[192], &X[128], &Y[0], double_rounds);
             neoscrypt_blkswp(&X[64], &X[128], r * 128);
         }
-
         neoscrypt_blkxor(&X[0], &Z[0], 4 * r * 128);
 
         neoscrypt_unpack_4way(&Y[0], &X[0], 4 * r * 128);
