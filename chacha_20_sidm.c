@@ -29,7 +29,7 @@
 #include <stdlib.h>
 #include <inttypes.h>
 
-#if defined(__x86_64__)
+#if (AVX)
 
 static inline void xor_chacha_sidm(__m128i *calc_16, __m128i *calc_12, __m128i *calc_8, __m128i *calc_7,
  								  __m128i *calc_1, __m128i *calc_2, __m128i *calc_3, __m128i *calc_4,

@@ -29,7 +29,7 @@
 #include <stdlib.h>
 #include <inttypes.h>
 
-#if defined(__x86_64__)
+#if (AVX)
 
 static inline void xor_salsa_sidm(__m128i *calc_18, __m128i *calc_13, __m128i *calc_9, __m128i *calc_7,
  								  __m128i *calc_1, __m128i *calc_4, __m128i *calc_3, __m128i *calc_2,
