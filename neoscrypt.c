@@ -33,10 +33,10 @@
 #include <string.h>
 
 #include "neoscrypt.h"
-#if (AVX)
 #include "salsa_20_sidm.c"
 #include "chacha_20_sidm.c"
-#endif
+#include "blake2s_sidm.c"
+
 #if (SHA256)
 
 /* SHA-256 */
@@ -1058,14 +1058,13 @@ static const uint blake2s_IV_P_XOR[8] = {
 /* Performance optimised FastKDF with BLAKE2s integrated */
 void neoscrypt_fastkdf_opt(const uchar *password, const uchar *salt,
   uchar *output, uint mode) {
-    const size_t stack_align = 0x40;
     uint bufptr, output_len, i, j;
     uchar *A, *B;
     uint *S;
 
     /* Align and set up the buffers in stack */
-    uchar stack[788 + stack_align];
-    A = (uchar *) (((size_t)stack & ~(stack_align - 1)) + stack_align);
+    uchar stack[788] __attribute__((aligned(32)));
+    A = (uchar *) (size_t)stack ;
     B = &A[320];
     S = (uint *) &A[608];
 
@@ -1256,10 +1255,11 @@ static void neoscrypt_blkmix(uint *X, uint *Y, uint r, uint mixmode) {
  *     11110 = N of 2147483648;
  *   profile bits 30 to 13 are reserved */
 void neoscrypt(const uchar *password, uchar *output, uint profile) {
-    const size_t stack_align = 0x40;
+//    const size_t stack_align = 0x40;
     uint N = 128, r = 2, dblmix = 1, mixmode = 0x14;
     uint kdf, i, j;
-    uint *X, *Y, *Z, *V;
+    uint *X, *Z;
+//    uint *X, *Y, *Z, *V;
 
     if(profile & 0x1) {
         N = 1024;        /* N = (1 << (Nfactor + 1)); */
@@ -1273,15 +1273,15 @@ void neoscrypt(const uchar *password, uchar *output, uint profile) {
         r = (1 << ((profile >> 5) & 0x7));
     }
 
-    uchar stack[(N + 3) * r * 2 * SCRYPT_BLOCK_SIZE + stack_align] __attribute__((aligned(128)));
+    uchar stack[N  * r * 2 * SCRYPT_BLOCK_SIZE] __attribute__((aligned(32)));
     /* X = r * 2 * SCRYPT_BLOCK_SIZE */
-    X = (uint *) (((size_t)stack & ~(stack_align - 1)) + stack_align);
+    X = (uint *) ((size_t)stack );
     /* Z is a copy of X for ChaCha */
     Z = &X[32 * r];
     /* Y is an X sized temporal space */
-    Y = &X[64 * r];
+ //   Y = &X[64 * r];
     /* V = N * r * 2 * SCRYPT_BLOCK_SIZE */
-    V = &X[96 * r];
+ //   V = &X[96 * r];
 
     /* X = KDF(password, salt) */
     kdf = (profile >> 1) & 0xF;
@@ -1318,9 +1318,10 @@ void neoscrypt(const uchar *password, uchar *output, uint profile) {
 
     if(dblmix) {
         /* blkcpy(Z, X) */
-#if (AVX)
-    	neoscrypt_blkcpy(&Z[0], &X[0], r * 2 * SCRYPT_BLOCK_SIZE);
-        chacha_core_r2_sidm(Z, N, (mixmode & 0xFF)/2);
+#if 1
+    	memcpy(Z, X, r * 2 * SCRYPT_BLOCK_SIZE);
+//    	neoscrypt_blkcpy(&Z[0], &X[0], r * 2 * SCRYPT_BLOCK_SIZE);
+        chacha_core_r2_sidm((__m128i *)Z, N, (mixmode & 0xFF)/2);
 #else
         neoscrypt_blkcpy(&Z[0], &X[0], r * 2 * SCRYPT_BLOCK_SIZE);
 
@@ -1342,8 +1343,8 @@ void neoscrypt(const uchar *password, uchar *output, uint profile) {
         }
 #endif
     }
-#if (AVX)
-    scrypt_core_r2_sidm(X, N, (mixmode & 0xFF) /2);
+#if 1
+    scrypt_core_r2_sidm((__m128i *) X, N, (mixmode & 0xFF) /2);
 #else
     /* X = SMix(X) */
     for(i = 0; i < N; i++) {
@@ -1363,7 +1364,8 @@ void neoscrypt(const uchar *password, uchar *output, uint profile) {
 #endif
     if(dblmix)
       /* blkxor(X, Z) */
-      neoscrypt_blkxor(&X[0], &Z[0], r * 2 * SCRYPT_BLOCK_SIZE);
+      xor_sidm((__m128i*)X,(__m128i*)Z, 16);
+//      neoscrypt_blkxor(&X[0], &Z[0], r * 2 * SCRYPT_BLOCK_SIZE);
 
     /* output = KDF(password, X) */
     switch(kdf) {
