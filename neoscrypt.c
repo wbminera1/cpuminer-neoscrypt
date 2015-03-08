@@ -1104,7 +1104,8 @@ void neoscrypt_fastkdf_opt(const uchar *password, const uchar *salt,
 
         /* BLAKE2s: compress */
         S[8] = 64;
-        blake2s_compress((blake2s_state *) S);
+//        blake2s_compress((blake2s_state *) S);
+        blake2_compress_sidm((blake2s_state_sidm *) S);
         S[44] = 64;
         neoscrypt_copy(&S[12], &S[28], 64);
 
@@ -1112,7 +1113,8 @@ void neoscrypt_fastkdf_opt(const uchar *password, const uchar *salt,
         S[8] = 128;
         S[10] = ~0U;
         neoscrypt_erase(&S[28], 64);
-        blake2s_compress((blake2s_state *) S);
+//        blake2s_compress((blake2s_state *) S);
+        blake2_compress_sidm((blake2s_state_sidm *) S);
 
         for(j = 0, bufptr = 0; j < 8; j++) {
           bufptr += S[j];
