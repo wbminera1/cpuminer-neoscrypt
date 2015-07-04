@@ -2,6 +2,8 @@
 extern "C" {
 #endif
 
+void neoscrypt_X3(const unsigned char *input, unsigned char *output);
+
 void neoscrypt(const unsigned char *input, unsigned char *output,
   unsigned int profile);
 

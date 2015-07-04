@@ -1164,10 +1164,51 @@ static int scanhash_neoscrypt(int thr_id, uint *pdata, const uint *ptarget,
         pdata[19] += inc_nonce;
 
     } 
+    *hashes_done = pdata[19] - inc_nonce - start_nonce;
+    return(0);
+}
+
+static int scanhash_neoscrypt_X3(int thr_id, uint *pdata, const uint *ptarget,
+	uint max_nonce, ulong *hashes_done, uint profile) {
+    uint hash_X3[8*3] __attribute__ ((aligned (32)));
+    const uint targint = ptarget[7];
+    uint start_nonce = pdata[19], inc_nonce = 3, k;
+    /* Load the password and increment nonces */
+    while((pdata[19] < max_nonce) && !work_restart[thr_id].restart) {
+
+     	neoscrypt_X3((uchar *) pdata, (uchar *) hash_X3);
+
+        /* Quick hash check */
+        if(hash_X3[7] <= targint) {
+            /* Complete hash check */
+            if(fulltest_le(&hash_X3[0], ptarget)) {
+                *hashes_done = pdata[19] - start_nonce;
+                return(1);
+            }
+        }
+        if(hash_X3[15] <= targint) {
+            /* Complete hash check */
+            if(fulltest_le(&hash_X3[8], ptarget)) {
+            	pdata[19] += 1;
+                *hashes_done = pdata[19] - start_nonce;
+                return(1);
+            }
+        }
+        if(hash_X3[23] <= targint) {
+            /* Complete hash check */
+            if(fulltest_le(&hash_X3[16], ptarget)) {
+            	pdata[19] += 2;
+                *hashes_done = pdata[19] - start_nonce;
+                return(1);
+            }
+        }
+        pdata[19] += inc_nonce;
+    }
 
     *hashes_done = pdata[19] - inc_nonce - start_nonce;
     return(0);
 }
+
 
 static int scanhash_altscrypt(int thr_id, uint *pdata, const uint *ptarget,
   uint max_nonce, ulong *hashes_done, uint profile) {
@@ -1447,7 +1488,7 @@ static void *miner_thread(void *userdata)
                     max_nonce, &hashes_done);
                 else
 #endif
-                  rc = scanhash_neoscrypt(thr_id, work.data, work.target,
+                  rc = scanhash_neoscrypt_X3(thr_id, work.data, work.target,
                     max_nonce, &hashes_done, opt_neoscrypt_profile);
                 break;
 
@@ -1657,7 +1698,7 @@ static void *stratum_thread(void *userdata)
 {
 	struct thr_info *mythr = userdata;
 	char *s;
-
+	s = NULL;
 	stratum.url = tq_pop(mythr->q, NULL);
 	if (!stratum.url)
 		goto out;
