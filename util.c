@@ -1022,11 +1022,58 @@ static const char *get_stratum_session_id(json_t *val)
 	return NULL;
 }
 
+static bool stratum_parse_extranonce(struct stratum_ctx *sctx, json_t *params, int pndx)
+{
+	const char* xnonce1;
+	int xn2_size;
+
+	xnonce1 = json_string_value(json_array_get(params, pndx));
+	if (!xnonce1) {
+		applog(LOG_ERR, "Failed to get extranonce1");
+		goto out;
+	}
+	xn2_size = json_integer_value(json_array_get(params, pndx+1));
+	if (!xn2_size) {
+		applog(LOG_ERR, "Failed to get extranonce2_size");
+		goto out;
+	}
+	if (xn2_size < 2 || xn2_size > 16) {
+		applog(LOG_INFO, "Failed to get valid n2size in parse_extranonce");
+		goto out;
+	}
+
+	pthread_mutex_lock(&sctx->work_lock);
+	if (sctx->xnonce1)
+		free(sctx->xnonce1);
+	sctx->xnonce1_size = strlen(xnonce1) / 2;
+	sctx->xnonce1 = malloc(sctx->xnonce1_size);
+//	sctx->xnonce1 = /*(uchar*)*/ calloc(1, sctx->xnonce1_size);
+	if (unlikely(!sctx->xnonce1)) {
+		applog(LOG_ERR, "Failed to alloc xnonce1");
+		pthread_mutex_unlock(&sctx->work_lock);
+		goto out;
+	}
+	hex2bin(sctx->xnonce1, xnonce1, sctx->xnonce1_size);
+	sctx->xnonce2_size = xn2_size;
+	pthread_mutex_unlock(&sctx->work_lock);
+
+	if (pndx == 0 && opt_debug) /* pool dynamic change */
+		applog(LOG_DEBUG, "Stratum set nonce %s with extranonce2 size=%d",
+			xnonce1, xn2_size);
+
+	return true;
+out:
+	return false;
+}
+
+
+
 bool stratum_subscribe(struct stratum_ctx *sctx)
 {
 	char *s, *sret = NULL;
-	const char *sid, *xnonce1;
-	int xn2_size;
+//	const char *sid, *xnonce1;
+//	int xn2_size;
+	const char *sid;
 	json_t *val = NULL, *res_val, *err_val;
 	json_error_t err;
 	bool ret = false, retry = false;
@@ -1078,29 +1125,42 @@ start:
 	}
 
 	sid = get_stratum_session_id(res_val);
-	if (opt_debug && !sid)
-		applog(LOG_DEBUG, "Failed to get Stratum session id");
-	xnonce1 = json_string_value(json_array_get(res_val, 1));
-	if (!xnonce1) {
-		applog(LOG_ERR, "Failed to get extranonce1");
-		goto out;
-	}
-	xn2_size = json_integer_value(json_array_get(res_val, 2));
-	if (!xn2_size) {
-		applog(LOG_ERR, "Failed to get extranonce2_size");
+//	if (opt_debug && !sid)
+//		applog(LOG_DEBUG, "Failed to get Stratum session id");
+//	xnonce1 = json_string_value(json_array_get(res_val, 1));
+//	if (!xnonce1) {
+//		applog(LOG_ERR, "Failed to get extranonce1");
+//		goto out;
+//	}
+//	xn2_size = json_integer_value(json_array_get(res_val, 2));
+//	if (!xn2_size) {
+//		applog(LOG_ERR, "Failed to get extranonce2_size");
+//		goto out;
+//	}
+//	if (opt_debug && sid)
+//		applog(LOG_DEBUG, "Stratum session id: %s", sid);
+
+ 	pthread_mutex_lock(&sctx->work_lock);
+	if (sctx->session_id)
+		free(sctx->session_id);
+ 	sctx->session_id = sid ? strdup(sid) : NULL;
+ 	sctx->next_diff = 1.0;
+ 	pthread_mutex_unlock(&sctx->work_lock);
+
+// sid is param 1, extranonce params are 2 and 3
+	if (!stratum_parse_extranonce(sctx, res_val, 1)) {
 		goto out;
 	}
 
-	pthread_mutex_lock(&sctx->work_lock);
-	free(sctx->session_id);
-	free(sctx->xnonce1);
-	sctx->session_id = sid ? strdup(sid) : NULL;
-	sctx->xnonce1_size = strlen(xnonce1) / 2;
-	sctx->xnonce1 = malloc(sctx->xnonce1_size);
-	hex2bin(sctx->xnonce1, xnonce1, sctx->xnonce1_size);
-	sctx->xnonce2_size = xn2_size;
-	sctx->next_diff = 1.0;
-	pthread_mutex_unlock(&sctx->work_lock);
+//	free(sctx->session_id);
+//	free(sctx->xnonce1);
+//	sctx->session_id = sid ? strdup(sid) : NULL;
+//	sctx->xnonce1_size = strlen(xnonce1) / 2;
+//	sctx->xnonce1 = malloc(sctx->xnonce1_size);
+//	hex2bin(sctx->xnonce1, xnonce1, sctx->xnonce1_size);
+//	sctx->xnonce2_size = xn2_size;
+//	sctx->next_diff = 1.0;
+//	pthread_mutex_unlock(&sctx->work_lock);
 
 	if (opt_debug && sid)
 		applog(LOG_DEBUG, "Stratum session id: %s", sctx->session_id);
@@ -1125,7 +1185,7 @@ out:
 bool stratum_authorize(struct stratum_ctx *sctx, const char *user, const char *pass)
 {
 	json_t *val = NULL, *res_val, *err_val;
-	char *s, *sret;
+	char *s, *sret, *subret;
 	json_error_t err;
 	bool ret = false;
 
@@ -1162,6 +1222,45 @@ bool stratum_authorize(struct stratum_ctx *sctx, const char *user, const char *p
 	}
 
 	ret = true;
+	// subscribe to extranonce (optional)
+	sprintf(s, "{\"id\": 3, \"method\": \"mining.extranonce.subscribe\", \"params\": []}");
+
+	if (!stratum_send_line(sctx, s))
+		goto out;
+
+	while (1) {
+		if (!socket_full(sctx->sock, 3)) {
+			if (opt_debug)
+				applog(LOG_DEBUG, "stratum extranonce subscribe timed out");
+			goto out;
+		}
+		sret = stratum_recv_line(sctx);
+		if (!sret)
+			goto out;
+		if (!stratum_handle_method(sctx, sret))
+			break;
+		free(sret);
+	}
+
+	sret = stratum_recv_line(sctx);
+	if (sret) {
+		json_t *extra = JSON_LOADS(sret, &err);
+		if (!extra) {
+			applog(LOG_WARNING, "JSON decode failed(%d): %s", err.line, err.text);
+		} else {
+			if (json_integer_value(json_object_get(extra, "id")) != 3) {
+				// we receive a standard method if extranonce is ignored
+				if (!stratum_handle_method(sctx, sret))
+					applog(LOG_WARNING, "Stratum answer id is not correct!");
+				// applog(LOG_WARNING, "Stratum answer id is not correct!");
+			}
+			res_val = json_object_get(extra, "result");
+			if (opt_debug && (!res_val || json_is_false(res_val)))
+				applog(LOG_DEBUG, "extranonce subscribe not supported");
+			json_decref(extra);
+		}
+		free(sret);
+	}
 
 out:
 	free(s);
@@ -1364,6 +1463,7 @@ bool stratum_handle_method(struct stratum_ctx *sctx, const char *s)
 	}
 
 	method = json_string_value(json_object_get(val, "method"));
+//	applog(LOG_DEBUG, "Parse_Method: %s", method);
 	if (!method)
 		goto out;
 	id = json_object_get(val, "id");
@@ -1375,6 +1475,10 @@ bool stratum_handle_method(struct stratum_ctx *sctx, const char *s)
 	}
 	if (!strcasecmp(method, "mining.set_difficulty")) {
 		ret = stratum_set_difficulty(sctx, params);
+		goto out;
+	}
+	if (!strcasecmp(method, "mining.set_extranonce")) {
+		ret = stratum_parse_extranonce(sctx, params, 0);
 		goto out;
 	}
 	if (!strcasecmp(method, "client.reconnect")) {
