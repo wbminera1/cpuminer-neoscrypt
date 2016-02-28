@@ -36,8 +36,8 @@ typedef unsigned long long ulong;
 #else
 typedef unsigned long ulong;
 #endif
-typedef unsigned int  uint;
-typedef unsigned char uchar;
+//typedef unsigned int  uint;
+//typedef unsigned char uchar;
 
 #ifndef MIN
 #define MIN(a, b) ((a) < (b) ? a : b)
@@ -51,7 +51,7 @@ typedef unsigned char uchar;
 #define SCRYPT_HASH_BLOCK_SIZE 64
 #define SCRYPT_HASH_DIGEST_SIZE 32
 
-typedef uchar hash_digest[SCRYPT_HASH_DIGEST_SIZE];
+typedef uint8_t hash_digest[SCRYPT_HASH_DIGEST_SIZE];
 
 #define ROTL32(a,b) (((a) << (b)) | ((a) >> (32 - b)))
 #define ROTR32(a,b) (((a) >> (b)) | ((a) << (32 - b)))
@@ -61,8 +61,8 @@ typedef uchar hash_digest[SCRYPT_HASH_DIGEST_SIZE];
     ((uint)((p)[2]) <<  8) | ((uint)((p)[3])))
 
 #define U32TO8_BE(p, v) \
-    (p)[0] = (uchar)((v) >> 24); (p)[1] = (uchar)((v) >> 16); \
-    (p)[2] = (uchar)((v) >>  8); (p)[3] = (uchar)((v)      );
+    (p)[0] = (uint8_t)((v) >> 24); (p)[1] = (uint8_t)((v) >> 16); \
+    (p)[2] = (uint8_t)((v) >>  8); (p)[3] = (uint8_t)((v)      );
 
 #define U64TO8_BE(p, v) \
     U32TO8_BE((p),     (uint)((v) >> 32)); \
