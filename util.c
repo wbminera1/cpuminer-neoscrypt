@@ -26,14 +26,6 @@
 #include <jansson.h>
 #include <curl/curl.h>
 #include <time.h>
-#if defined(WIN32)
-#include <winsock2.h>
-#include <mstcpip.h>
-#else
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netinet/tcp.h>
-#endif
 #include "compat.h"
 #include "miner.h"
 #include "elist.h"
@@ -765,12 +757,6 @@ void diff_to_target(uint32_t *target, double diff)
 		target[k + 1] = (uint32_t)(m >> 32);
 	}
 }
-
-#ifdef WIN32
-#define socket_blocks() (WSAGetLastError() == WSAEWOULDBLOCK)
-#else
-#define socket_blocks() (errno == EAGAIN || errno == EWOULDBLOCK)
-#endif
 
 static bool send_line(curl_socket_t sock, char *s)
 {

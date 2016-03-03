@@ -1,3 +1,4 @@
+AUTOMAKE_OPTIONS = subdir-objects 
 
 if WANT_JANSSON
 JANSSON_INCLUDES= -I$(top_srcdir)/compat/jansson
@@ -20,18 +21,18 @@ minerd_SOURCES	= elist.h miner.h compat.h \
 		  sha2.c scrypt.c \
 		  neoscrypt.c neoscrypt.h
 if USE_ASM
-minerd_SOURCES += neoscrypt_asm.S
+minerd_SOURCES += Asm/neoscrypt_asm.S
 if ARCH_x86
-minerd_SOURCES += sha2-x86.S scrypt-x86.S 
+minerd_SOURCES += Asm/sha2-x86.S Asm/scrypt-x86.S 
 endif
 if ARCH_x86_64
-minerd_SOURCES += sha2-x64.S scrypt-x64.S
+minerd_SOURCES += Asm/sha2-x64.S Asm/scrypt-x64.S
 endif
 if ARCH_ARM
-minerd_SOURCES += sha2-arm.S scrypt-arm.S
+minerd_SOURCES += Asm/sha2-arm.S Asm/scrypt-arm.S
 endif
 endif
 minerd_LDFLAGS	= $(PTHREAD_FLAGS)
 minerd_LDADD	= @LIBCURL@ @JANSSON_LIBS@ @PTHREAD_LIBS@ @WS2_LIBS@
-minerd_CPPFLAGS = @LIBCURL_CPPFLAGS@
+minerd_CPPFLAGS = @LIBCURL_CPPFLAGS@ -DASM
 
