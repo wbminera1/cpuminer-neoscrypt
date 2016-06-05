@@ -643,7 +643,10 @@ bool fulltest_le(const uint *hash, const uint *target) {
           rc ? "hash <= target"
              : "hash > target (false positive)",
                hash_str, target_str);
-
+        printf("DEBUG (little endian): %s\nHash:   %sx0\nTarget: %sx0",
+                rc ? "hash <= target"
+                   : "hash > target (false positive)",
+                     hash_str, target_str);
     }
 
     return(rc);
@@ -837,6 +840,7 @@ static void *miner_thread(void *userdata)
 	unsigned char *scratchbuf = NULL;
 	char s[16];
 	int i;
+	int wd;
 
 	/* Set worker threads to nice 19 and then preferentially to SCHED_IDLE
 	 * and if that fails, then SCHED_BATCH. No need for this to be an
@@ -954,8 +958,23 @@ static void *miner_thread(void *userdata)
                     max_nonce, &hashes_done);
                 else
 #endif
+                  printf("Thread %d MaxNonce %x Profile %02x\n", thr_id, max_nonce, opt_neoscrypt_profile);
+            	  printf("Data ");
+				  for(wd = 0; wd < 32; ++wd) {
+						printf("%02x", work.data[wd]);
+				  }
+				  printf("\n");
+				  printf("Target ");
+				  for(wd = 0; wd < 8; ++wd) {
+					  printf("%02x", work.target[wd]);
+				  }
+				  printf("\n");
                   rc = scanhash_neoscrypt(thr_id, work.data, work.target,
                     max_nonce, &hashes_done, opt_neoscrypt_profile);
+                  if(rc != 0) {
+                	  printf("Found!\n");
+                	  exit(0);
+                  }
                 break;
 
             case(ALGO_ALTSCRYPT):

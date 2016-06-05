@@ -17,7 +17,7 @@ bin_PROGRAMS	= minerd
 dist_man_MANS	= minerd.1
 
 minerd_SOURCES	= elist.h miner.h compat.h \
-		  cpu-miner-work.c cpu-miner-opt.c cpu-miner.c util.c \
+		  cpu-miner-work.c cpu-miner-opt.c cpu-miner.c util.c util-conversion.c \
 		  sha2.c scrypt.c \
 		  neoscrypt.c neoscrypt.h
 if USE_ASM
@@ -34,5 +34,5 @@ endif
 endif
 minerd_LDFLAGS	= $(PTHREAD_FLAGS)
 minerd_LDADD	= @LIBCURL@ @JANSSON_LIBS@ @PTHREAD_LIBS@ @WS2_LIBS@
-minerd_CPPFLAGS = @LIBCURL_CPPFLAGS@ -DASM
+minerd_CPPFLAGS = @LIBCURL_CPPFLAGS@
 
