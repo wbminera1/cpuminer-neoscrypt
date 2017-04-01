@@ -29,6 +29,9 @@
     <ClCompile Include="..\util.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\compat\gettimeofday.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\compat.h">

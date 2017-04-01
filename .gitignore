@@ -31,3 +31,7 @@ bin
 x64
 /cpuminer-neoscrypt/.vs/cpuminer-neoscrypt/v14/*.suo
 /cpuminer-neoscrypt/*.sdf
+
+*.user
+
+cpuminer-neoscrypt/cpuminer-neoscrypt\.VC\.db
