@@ -19,6 +19,9 @@ minerd_SOURCES	= elist.h miner.h compat.h \
 		  cpu-miner.c util.c \
 		  sha2.c scrypt.c \
 		  neoscrypt.c neoscrypt.h
+if USE_AVX
+minerd_SOURCES += chacha_20_sidm.c salsa_20_sidm.c
+endif
 if USE_ASM
 minerd_SOURCES += neoscrypt_asm.S
 if ARCH_x86
