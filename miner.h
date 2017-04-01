@@ -5,7 +5,6 @@
 
 #include <stdbool.h>
 #include <inttypes.h>
-#include <sys/time.h>
 #include <pthread.h>
 #include <jansson.h>
 #include <curl/curl.h>
@@ -130,6 +129,8 @@ static inline void le32enc(void *pp, uint32_t x)
 #define JSON_LOAD_FILE(path, err_ptr) json_load_file(path, err_ptr)
 #endif
 
+#define PACKAGE_NAME "pn"
+#define PACKAGE_VERSION "pv"
 #define USER_AGENT PACKAGE_NAME "/" PACKAGE_VERSION
 
 void sha256_init(uint32_t *state);

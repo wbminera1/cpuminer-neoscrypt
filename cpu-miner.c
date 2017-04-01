@@ -17,14 +17,15 @@
 #include <string.h>
 #include <stdbool.h>
 #include <inttypes.h>
-#include <unistd.h>
-#include <sys/time.h>
 #include <time.h>
-#ifdef WIN32
+#include "getopt.h"
+#ifdef _WIN32
 #include <windows.h>
 typedef unsigned long ulong;
 typedef unsigned int uint;
 #else
+#include <unistd.h>
+#include <sys/time.h>
 #include <errno.h>
 #include <signal.h>
 #include <sys/resource.h>
@@ -170,12 +171,7 @@ static double *thr_hashrates;
 #ifdef HAVE_GETOPT_LONG
 #include <getopt.h>
 #else
-struct option {
-	const char *name;
-	int has_arg;
-	int *flag;
-	int val;
-};
+#include "getopt.h"
 #endif
 
 static char const usage[] = "\
@@ -765,7 +761,7 @@ static bool submit_upstream_work(CURL *curl, struct work *work)
         if(opt_algo != ALGO_NEOSCRYPT)
           data_size = 128;
 
-        uchar gw_str[2 * data_size + 1];
+        uchar gw_str[2 * 80 + 1];
 
         /* Convert to little endian */
         for(i = 0; i < (data_size >> 2); i++)
@@ -1716,7 +1712,7 @@ static void *stratum_thread(void *userdata)
 out:
 	return NULL;
 }
-
+#define PACKAGE_STRING "PS"
 static void show_version_and_exit(void)
 {
 	printf(PACKAGE_STRING "\n built on " __DATE__ "\n features:"

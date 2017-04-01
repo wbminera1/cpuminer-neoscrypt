@@ -22,7 +22,6 @@
 #include <inttypes.h>
 #include <limits.h>
 #include <errno.h>
-#include <unistd.h>
 #include <jansson.h>
 #include <curl/curl.h>
 #include <time.h>
@@ -30,6 +29,7 @@
 #include <winsock2.h>
 #include <mstcpip.h>
 #else
+#include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
@@ -39,12 +39,12 @@
 #include "elist.h"
 
 struct data_buffer {
-	void		*buf;
+	char*		buf;
 	size_t		len;
 };
 
 struct upload_buffer {
-	const void	*buf;
+	const char* buf;
 	size_t		len;
 	size_t		pos;
 };
@@ -56,7 +56,7 @@ struct header_info {
 };
 
 struct tq_ent {
-	void			*data;
+	char*				data;
 	struct list_head	q_node;
 };
 
@@ -247,12 +247,12 @@ static int seek_data_cb(void *user_data, curl_off_t offset, int origin)
 }
 #endif
 
-static size_t resp_hdr_cb(void *ptr, size_t size, size_t nmemb, void *user_data)
+static size_t resp_hdr_cb(char *ptr, size_t size, size_t nmemb, void *user_data)
 {
 	struct header_info *hi = user_data;
 	size_t remlen, slen, ptrlen = size * nmemb;
 	char *rem, *val = NULL, *key = NULL;
-	void *tmp;
+	char *tmp;
 
 	val = calloc(1, ptrlen);
 	key = calloc(1, ptrlen);
@@ -774,14 +774,14 @@ void diff_to_target(uint32_t *target, double diff)
 
 static bool send_line(curl_socket_t sock, char *s)
 {
-	ssize_t len, sent = 0;
+	size_t len, sent = 0;
 	
 	len = strlen(s);
 	s[len++] = '\n';
 
 	while (len > 0) {
 		struct timeval timeout = {0, 0};
-		ssize_t n;
+		size_t n;
 		fd_set wd;
 
 		FD_ZERO(&wd);
@@ -852,7 +852,7 @@ static void stratum_buffer_append(struct stratum_ctx *sctx, const char *s)
 
 char *stratum_recv_line(struct stratum_ctx *sctx)
 {
-	ssize_t len, buflen;
+	size_t len, buflen;
 	char *tok, *sret = NULL;
 
 	if (!strstr(sctx->sockbuf, "\n")) {
@@ -866,7 +866,7 @@ char *stratum_recv_line(struct stratum_ctx *sctx)
 		}
 		do {
 			char s[RBUFSIZE];
-			ssize_t n;
+			size_t n;
 
 			memset(s, 0, RBUFSIZE);
 			n = recv(sctx->sock, s, RECVSIZE, 0);

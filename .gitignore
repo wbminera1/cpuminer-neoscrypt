@@ -26,3 +26,8 @@ config.sub
 
 mingw32-config.cache
 
+bin
+/cpuminer-neoscrypt/obj
+x64
+/cpuminer-neoscrypt/.vs/cpuminer-neoscrypt/v14/*.suo
+/cpuminer-neoscrypt/*.sdf
