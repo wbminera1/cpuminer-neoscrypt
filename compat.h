@@ -1,10 +1,18 @@
 #ifndef __COMPAT_H__
 #define __COMPAT_H__
 
-#ifdef WIN32
+#ifdef _WIN32
+#define WIN32
+#endif
+
+#if defined(WIN32) 
 
 #include <windows.h>
 #include <time.h>
+#include <stdio.h>
+
+typedef unsigned long ulong;
+typedef unsigned int uint;
 
 #ifndef localtime_r
 #define localtime_r(src, dst) localtime_s(dst, src)

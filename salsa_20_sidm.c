@@ -231,7 +231,8 @@ static inline void xor_salsa_sidm_swap(__m128i *calc_18, __m128i *calc_13, __m12
 static inline void scrypt_core_r2_sidm(__m128i *X , uint32_t Loops, uint32_t double_rounds)
 {
 	uint32_t i, j;
-	__m128i scratch[Loops * 8 * 4];
+//	__m128i scratch[Loops * 8 * 4];
+	__m128i scratch[4096 * 8 * 4];
 
 	__m128i *calc_1 = (__m128i*) &X[0];
 	__m128i *calc_2 = (__m128i*) &X[1];
@@ -844,9 +845,12 @@ static inline void xor_salsa_sidm_swap_X3(
 static inline void scrypt_core_r2_sidm_X3(__m128i *X_1, __m128i *X_2, __m128i *X_3, uint32_t Loops, uint32_t double_rounds)
 {
 	uint32_t i, j1, j2, j3;
-	__m128i scratch_1[Loops * 8 * 4];
-	__m128i scratch_2[Loops * 8 * 4];
-	__m128i scratch_3[Loops * 8 * 4];
+//	__m128i scratch_1[Loops * 8 * 4];
+	__m128i scratch_1[4096 * 8 * 4];
+//	__m128i scratch_2[Loops * 8 * 4];
+	__m128i scratch_2[4096 * 8 * 4];
+//	__m128i scratch_3[Loops * 8 * 4];
+	__m128i scratch_3[4096 * 8 * 4];
 // 1
 	__m128i *calc_1_1 = (__m128i*) &X_1[0];
 	__m128i *calc_2_1 = (__m128i*) &X_1[1];
@@ -1283,7 +1287,8 @@ static inline void scrypt_core_r2_sidm_X3(__m128i *X_1, __m128i *X_2, __m128i *X
 static inline void scrypt_core_sidm(__m128i *X , uint32_t Loops, uint32_t double_rounds)
 {
 	uint32_t i, j;
-	__m128i scratch[Loops * 8];
+//	__m128i scratch[Loops * 8];
+	__m128i scratch[4096 * 8];
 
 	__m128i *calc_1 = (__m128i*) &X[0];
 	__m128i *calc_2 = (__m128i*) &X[1];
@@ -1367,7 +1372,7 @@ static inline void scrypt_core_sidm(__m128i *X , uint32_t Loops, uint32_t double
 	*calc_3 = _mm_blend_epi16(_calc7, _calc6, 0xcc);
 	*calc_4 = _mm_blend_epi16(_calc8, _calc7, 0xcc);
 }
-
+/*
 static inline void xor_salsa_sidm_3way(__m128i *calc_11, __m128i *calc_21, __m128i *calc_31,
 									uint32_t double_rounds)
 {
@@ -1397,7 +1402,7 @@ static inline void xor_salsa_sidm_3way(__m128i *calc_11, __m128i *calc_21, __m12
 
 	for (i = 0; i < double_rounds; i++) {
 
-		/* first row  X[3]=f(X0,X1) */
+		//* first row  X[3]=f(X0,X1)
  		_calc_x1 = _mm_add_epi32(X1[0], X1[1]);     //X[0] and X[1]
  		_calc_x2 = _mm_add_epi32(X2[0], X2[1]);     //X[0] and X[1]
 		_shift_left = _mm_slli_epi32(_calc_x1, 7);
@@ -1414,7 +1419,7 @@ static inline void xor_salsa_sidm_3way(__m128i *calc_11, __m128i *calc_21, __m12
 		X2[3] ^= _calc_x2;
 		X3[3] ^= _calc_x3;
 
-		/* second rows X[2]=f(X3,X0) */
+		// second rows X[2]=f(X3,X0)
  		_calc_x1 = _mm_add_epi32(X1[3], X1[0]);     //X[3] and X[0]
  		_calc_x2 = _mm_add_epi32(X2[3], X2[0]);     //X[3] and X[0]
 		_shift_left = _mm_slli_epi32(_calc_x1, 9);
@@ -1431,7 +1436,7 @@ static inline void xor_salsa_sidm_3way(__m128i *calc_11, __m128i *calc_21, __m12
 		X2[2] ^= _calc_x2;
 		X3[2] ^= _calc_x3;
 
-		/* third rows X[1]=f(X2,X3) */
+		// third rows X[1]=f(X2,X3)
  		_calc_x1 = _mm_add_epi32(X1[2], X1[3]);     //X[2] and X[3]
  		_calc_x2 = _mm_add_epi32(X2[2], X2[3]);     //X[2] and X[3]
 		_shift_left = _mm_slli_epi32(_calc_x1, 13);
@@ -1448,7 +1453,7 @@ static inline void xor_salsa_sidm_3way(__m128i *calc_11, __m128i *calc_21, __m12
 		X2[1] ^= _calc_x2;
 		X3[1] ^= _calc_x3;
 
-		/* fourth rows X[0]=f(X1,X2) */
+		// fourth rows X[0]=f(X1,X2)
  		_calc_x1 = _mm_add_epi32(X1[1], X1[2]);     //X[1] and X[2]
  		_calc_x2 = _mm_add_epi32(X2[1], X2[2]);     //X[1] and X[2]
 		_shift_left = _mm_slli_epi32(_calc_x1, 18);
@@ -1478,7 +1483,7 @@ static inline void xor_salsa_sidm_3way(__m128i *calc_11, __m128i *calc_21, __m12
 	// end transpose
 
 		// switch *calc_13 and * calc_7 usage compared to rows
-		/* first column X[1]=f(X0,X3) */
+		// first column X[1]=f(X0,X3)
  		_calc_x1 = _mm_add_epi32(X1[0], X1[3]);     //X[0] and X[3]
  		_calc_x2 = _mm_add_epi32(X2[0], X2[3]);     //X[0] and X[3]
 		_shift_left = _mm_slli_epi32(_calc_x1, 7);
@@ -1495,7 +1500,7 @@ static inline void xor_salsa_sidm_3way(__m128i *calc_11, __m128i *calc_21, __m12
 		X2[1] ^= _calc_x2;
 		X3[1] ^= _calc_x3;
 
-		/* second column X[2]=f(X1,X0) */
+		// second column X[2]=f(X1,X0)
  		_calc_x1 = _mm_add_epi32(X1[1], X1[0]);     //X[1] and X[0]
  		_calc_x2 = _mm_add_epi32(X2[1], X2[0]);     //X[1] and X[0]
 		_shift_left = _mm_slli_epi32(_calc_x1, 9);
@@ -1512,7 +1517,7 @@ static inline void xor_salsa_sidm_3way(__m128i *calc_11, __m128i *calc_21, __m12
 		X2[2] ^= _calc_x2;
 		X3[2] ^= _calc_x3;
 
-		/* third column  X[3]=f(X2,X1) */
+		//* third column  X[3]=f(X2,X1)
  		_calc_x1 = _mm_add_epi32(X1[2], X1[1]);     //X[2] and X[1]
  		_calc_x2 = _mm_add_epi32(X2[2], X2[1]);     //X[2] and X[1]
 		_shift_left = _mm_slli_epi32(_calc_x1, 13);
@@ -1529,7 +1534,7 @@ static inline void xor_salsa_sidm_3way(__m128i *calc_11, __m128i *calc_21, __m12
 		X2[3] ^= _calc_x2;
 		X3[3] ^= _calc_x3;
 
-		/* fourth column  X[0]=f(X3,X2) */
+		//* fourth column  X[0]=f(X3,X2)
  		_calc_x1 = _mm_add_epi32(X1[3], X1[2]);     //X[3] and X[2]
  		_calc_x2 = _mm_add_epi32(X2[3], X2[2]);     //X[3] and X[2]
 		_shift_left = _mm_slli_epi32(_calc_x1, 18);
@@ -1576,8 +1581,9 @@ static inline void xor_salsa_sidm_3way(__m128i *calc_11, __m128i *calc_21, __m12
 	calc_31[3] = _mm_add_epi32(calc_31[3], X3[3]);
 
 }
+*/
 
-
+/*
 static inline void scrypt_core_sidm_3way(__m128i *X , uint32_t Loops, uint32_t double_rounds)
 {
 	uint32_t i, j;
@@ -1613,7 +1619,7 @@ static inline void scrypt_core_sidm_3way(__m128i *X , uint32_t Loops, uint32_t d
     __m128i *scratchPrt7 = &scratch[6];
     __m128i *scratchPrt8 = &scratch[7];
 
-	/* transpose the data from *X1x */
+	// transpose the data from *X1x
 	_calc5 =_mm_blend_epi16(SourcePtr[0], SourcePtr[2], 0xf0);
 	_calc6 =_mm_blend_epi16(SourcePtr[1], SourcePtr[3], 0x0f);
 	_calc7 =_mm_blend_epi16(SourcePtr[2], SourcePtr[0], 0xf0);
@@ -1632,7 +1638,7 @@ static inline void scrypt_core_sidm_3way(__m128i *X , uint32_t Loops, uint32_t d
 	calc_12[2] = _mm_blend_epi16(_calc7, _calc6, 0xcc);
 	calc_12[3] = _mm_blend_epi16(_calc8, _calc7, 0xcc);
 
-	/* transpose the data from *X2x */
+	// transpose the data from *X2x
 	_calc5 =_mm_blend_epi16(SourcePtr[8], SourcePtr[10], 0xf0);
 	_calc6 =_mm_blend_epi16(SourcePtr[9], SourcePtr[11], 0x0f);
 	_calc7 =_mm_blend_epi16(SourcePtr[10], SourcePtr[8], 0xf0);
@@ -1651,7 +1657,7 @@ static inline void scrypt_core_sidm_3way(__m128i *X , uint32_t Loops, uint32_t d
 	calc_22[2] = _mm_blend_epi16(_calc7, _calc6, 0xcc);
 	calc_22[3] = _mm_blend_epi16(_calc8, _calc7, 0xcc);
 
-	/* transpose the data from *X3x */
+	// transpose the data from *X3x 
 	_calc5 =_mm_blend_epi16(SourcePtr[16], SourcePtr[18], 0xf0);
 	_calc6 =_mm_blend_epi16(SourcePtr[17], SourcePtr[19], 0x0f);
 	_calc7 =_mm_blend_epi16(SourcePtr[18], SourcePtr[16], 0xf0);
@@ -1836,6 +1842,6 @@ static inline void scrypt_core_sidm_3way(__m128i *X , uint32_t Loops, uint32_t d
 	SourcePtr[22] = _mm_blend_epi16(_calc7, _calc6, 0xcc);
 	SourcePtr[23] = _mm_blend_epi16(_calc8, _calc7, 0xcc);
 }
-
+*/
 #endif
 

@@ -21,8 +21,6 @@
 #include "getopt.h"
 #ifdef _WIN32
 #include <windows.h>
-typedef unsigned long ulong;
-typedef unsigned int uint;
 #else
 #include <unistd.h>
 #include <sys/time.h>
@@ -1166,7 +1164,7 @@ static int scanhash_neoscrypt(int thr_id, uint *pdata, const uint *ptarget,
 
 static int scanhash_neoscrypt_X3(int thr_id, uint *pdata, const uint *ptarget,
 	uint max_nonce, ulong *hashes_done, uint profile) {
-    uint hash_X3[8*3] __attribute__ ((aligned (32)));
+    uint _ALIGN(32) hash_X3[8*3];
     const uint targint = ptarget[7];
     uint start_nonce = pdata[19], inc_nonce = 3, k;
     /* Load the password and increment nonces */

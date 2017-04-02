@@ -223,7 +223,8 @@ static inline void xor_chacha_sidm_swap(__m128i *calc_16, __m128i *calc_12, __m1
 static inline void chacha_core_r2_sidm(__m128i *X , uint32_t Loops, uint32_t double_rounds)
 {
 	uint32_t i, j;
-	__m128i scratch[Loops * 8 * 4];
+//	__m128i scratch[Loops * 8 * 4];
+	__m128i scratch[4096 * 8 * 4];
 
 	__m128i *calc_1 = (__m128i*) &X[0];
 	__m128i *calc_2 = (__m128i*) &X[1];
@@ -714,9 +715,12 @@ static inline void xor_chacha_sidm_swap_X3(
 static inline void chacha_core_r2_sidm_X3(__m128i *X_1, __m128i *X_2, __m128i *X_3, uint32_t Loops, uint32_t double_rounds)
 {
 	uint32_t i, j1, j2, j3;
-	__m128i scratch_1[Loops * 8 * 4];
-	__m128i scratch_2[Loops * 8 * 4];
-	__m128i scratch_3[Loops * 8 * 4];
+//	__m128i scratch_1[Loops * 8 * 4];
+	__m128i scratch_1[4096 * 8 * 4];
+//	__m128i scratch_2[Loops * 8 * 4];
+	__m128i scratch_2[4096 * 8 * 4];
+//	__m128i scratch_3[Loops * 8 * 4];
+	__m128i scratch_3[4096 * 8 * 4];
 
 	// 1
 	__m128i *calc_1_1 = (__m128i*) &X_1[0];

@@ -32,6 +32,7 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "compat.h"
 #include "neoscrypt.h"
 #include "salsa_20_sidm.c"
 #include "chacha_20_sidm.c"
@@ -771,6 +772,7 @@ void neoscrypt_xor(void *dstp, const void *srcp, uint len) {
 #define BLAKE2S_BLOCK_SIZE    64U
 #define BLAKE2S_OUT_SIZE      32U
 #define BLAKE2S_KEY_SIZE      32U
+#define BLAKE2S_BLOCK_SIZE_SIDM    64U
 
 /* Parameter block of 32 bytes */
 typedef struct blake2s_param_t {
@@ -2376,7 +2378,7 @@ void neoscrypt_fastkdf(const uchar *password, uint password_len,
 
 }
 
-#else
+#endif
 
 #if (ASM)
 
@@ -2399,7 +2401,7 @@ void neoscrypt_fastkdf_opt(const uchar *password, const uchar *salt,
     uint *S;
 
     /* Align and set up the buffers in stack */
-    uchar stack[788] __attribute__((aligned(32)));
+    uchar _ALIGN(32) stack[788];
     A = (uchar *) (size_t)stack ;
     B = &A[320];
     S = (uint *) &A[608];
@@ -2492,9 +2494,9 @@ inline void neoscrypt_fastkdf_opt_X3(const uchar *password_1, const uchar *passw
     uint32_t *prtptr_1, *prtptr_2, *prtptr_3;
 
     /* Align and set up the buffers in stack */
-    uchar stack_1[788] __attribute__((aligned(0x80)));
-    uchar stack_2[788] __attribute__((aligned(0x80)));
-    uchar stack_3[788] __attribute__((aligned(0x80)));
+    uchar _ALIGN(0x80) stack_1[788];
+    uchar _ALIGN(0x80) stack_2[788];
+    uchar _ALIGN(0x80) stack_3[788];
     A_1 = (uchar *) (size_t)stack_1 ;
     A_2 = (uchar *) (size_t)stack_2 ;
     A_3 = (uchar *) (size_t)stack_3 ;
@@ -2708,6 +2710,7 @@ inline void neoscrypt_fastkdf_opt_X3(const uchar *password_1, const uchar *passw
         memcpy(&output_3[i], &B_3[0], output_len - i);
     }
 }
+
 #endif /* (OPT) */
 
 #if !(ASM)
@@ -2834,7 +2837,8 @@ void neoscrypt(const uchar *password, uchar *output, uint profile) {
         r = (1 << ((profile >> 5) & 0x7));
     }
 
-    uchar stack[N  * r * 2 * SCRYPT_BLOCK_SIZE] __attribute__((aligned(32)));
+	//uchar stack[N  * r * 2 * SCRYPT_BLOCK_SIZE] __attribute__((aligned(32)));
+	uchar _ALIGN(32) stack[1024  * 3 * 2 * SCRYPT_BLOCK_SIZE];
     /* X = r * 2 * SCRYPT_BLOCK_SIZE */
     X = (uint *) ((size_t)stack );
     /* Z is a copy of X for ChaCha */
@@ -2968,11 +2972,12 @@ void neoscrypt_X3(const uchar *password, uchar *output) {
     uint *X_2, *Y_2, *Z_2, *V_2;
     uint *X_3, *Y_3, *Z_3, *V_3;
     double_rounds = (mixmode & 0xFF)/2;
-    uchar passwd_buf[3*80] __attribute__ ((aligned (64)));
+    uchar _ALIGN(64) passwd_buf[3*80];
     uint *passwd=(uint*)passwd_buf;
 
-    uchar stack[3 * (N + 3) * r * 2 * SCRYPT_BLOCK_SIZE] __attribute__ ((aligned (64)));
-    X_1 = (uint *) &stack[0];
+//    uchar stack[3 * (N + 3) * r * 2 * SCRYPT_BLOCK_SIZE] __attribute__ ((aligned (64)));
+	uchar _ALIGN(64) stack[3 * (1024 + 3) * 4 * 2 * SCRYPT_BLOCK_SIZE];
+	X_1 = (uint *)&stack[0];
     X_2 = (uint *) &stack[(N + 3) * r * 2 * SCRYPT_BLOCK_SIZE];
     X_3 = (uint *) &stack[2*(N + 3) * r * 2 * SCRYPT_BLOCK_SIZE];
     /* Z is a copy of X for ChaCha */

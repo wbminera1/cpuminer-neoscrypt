@@ -31,6 +31,8 @@
 #include <stdlib.h>
 #include <inttypes.h>
 
+#include "compat.h"
+
 #if defined(__x86_64__)
 
 #define BLAKE2S_BLOCK_SIZE_SIDM    64U
@@ -39,11 +41,11 @@ typedef struct blake2s_state_sidm_t {
     uint32_t  h[8];
     uint32_t  t[2];
     uint32_t  f[2];
-    u_char buf[2 * BLAKE2S_BLOCK_SIZE_SIDM];
+    unsigned char buf[2 * BLAKE2S_BLOCK_SIZE_SIDM];
     uint32_t  buflen;
 } blake2s_state_sidm;
 
-static const uint32_t blake2s_IV_sidm[8] __attribute__((aligned(32))) = {
+static const uint32_t _ALIGN(32) blake2s_IV_sidm[8] = {
     0x6A09E667, 0xBB67AE85, 0x3C6EF372, 0xA54FF53A,
     0x510E527F, 0x9B05688C, 0x1F83D9AB, 0x5BE0CD19
 };
@@ -135,7 +137,7 @@ static inline void blake2_round_sidm(__m128i* state, __m128i* Message)
 
 void blake2_compress_sidm(blake2s_state_sidm *S)
 {
-	uint32_t v[16] __attribute__((aligned(32)));
+	uint32_t _ALIGN(32) v[16];
 	uint32_t *m = (uint *) S->buf;
 	__m128i *_mm_v = (__m128i*) &v;
 	__m128i Message[4];
@@ -436,14 +438,14 @@ static inline void blake2_round_sidm_X3(__m128i* state, __m128i* Message)
 
 void blake2_compress_sidm_X3(blake2s_state_sidm *S_1, blake2s_state_sidm *S_2, blake2s_state_sidm *S_3)
 {
-	uint32_t v[16*3] __attribute__((aligned(32)));
+	uint32_t _ALIGN(32) v[16*3];
 	__m128i *_mm_v_1 = (__m128i*) &v[0];
 	__m128i *_mm_v_2 = (__m128i*) &v[16];
 	__m128i *_mm_v_3 = (__m128i*) &v[32];
 	uint32_t *m_1 = (uint *) S_1->buf;
 	uint32_t *m_2 = (uint *) S_2->buf;
 	uint32_t *m_3 = (uint *) S_3->buf;
-	uint32_t Message[16*3]  __attribute__((aligned(32)));
+	uint32_t _ALIGN(32) Message[16*3];
 
     v[0]  = S_1->h[0];
     v[1]  = S_1->h[1];
